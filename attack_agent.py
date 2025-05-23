@@ -131,8 +131,8 @@ workflow.add_conditional_edges(
 # Set the entry point
 workflow.set_entry_point("generate_attack_prompt")
 
-# Compile the workflow with recursion limit
-app = workflow.compile(recursion_limit=5)  # 재귀 제한을 5로 설정
+# Compile the workflow
+app = workflow.compile()
 
 def run_attack_workflow(target: str, strategy: Dict = None) -> Dict:
     """Run the attack workflow for a given target."""
@@ -141,8 +141,17 @@ def run_attack_workflow(target: str, strategy: Dict = None) -> Dict:
         "strategy": strategy if strategy else {},
         "attempts": 0  # 시도 횟수 초기화
     }
-    result = app.invoke(initial_state)
-    return result
+    try:
+        result = app.invoke(initial_state)
+        return result
+    except Exception as e:
+        # 재귀 제한에 도달한 경우
+        if "recursion" in str(e).lower():
+            return {
+                "attack_prompt": "최대 시도 횟수를 초과했습니다.",
+                "judge_evaluation": "시도 횟수 제한으로 인해 중단되었습니다."
+            }
+        raise e
 
 if __name__ == "__main__":
     # Example usage
