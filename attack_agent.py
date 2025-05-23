@@ -66,11 +66,11 @@ def evaluate_with_universal_judge(state: State) -> State:
     state['judge_evaluation'] = response.content
     return state
 
-def should_retry(state: State) -> Tuple[State, str]:
+def should_retry(state: State) -> str:
     """Determine if we should retry generating the attack prompt."""
     if "성공" in state['judge_evaluation'] or "success" in state['judge_evaluation'].lower():
-        return state, END
-    return state, "generate_attack_prompt"
+        return END
+    return "generate_attack_prompt"
 
 def create_workflow_image():
     """Create and display workflow using streamlit-agraph."""
