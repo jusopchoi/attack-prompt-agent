@@ -132,7 +132,7 @@ def judge_prompt(state: AgentState) -> AgentState:
 
 def should_retry(state: AgentState) -> str:
     """Determine if we should retry generating the prompt."""
-    return "retry" if not state["is_success"] else "end"
+    return "retry" if not state["is_success"] else END
 
 # Create the graph
 def create_attack_graph() -> Graph:
@@ -150,7 +150,7 @@ def create_attack_graph() -> Graph:
         should_retry,
         {
             "retry": "generate",
-            "end": "end"
+            END: END
         }
     )
     
