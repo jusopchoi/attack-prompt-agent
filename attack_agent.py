@@ -126,9 +126,10 @@ app = workflow.compile()
 
 def run_attack_workflow(target: str, strategy: Dict = None) -> Dict:
     """Run the attack workflow for a given target."""
-    initial_state = {"target": target}
-    if strategy:
-        initial_state["strategy"] = strategy
+    initial_state = {
+        "target": target,
+        "strategy": strategy if strategy else {}
+    }
     result = app.invoke(initial_state)
     return result
 
