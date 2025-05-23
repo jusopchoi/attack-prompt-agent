@@ -31,12 +31,20 @@ if taxonomy_file is not None:
     try:
         # 파일 내용 로깅
         taxonomy_content = taxonomy_file.getvalue().decode('utf-8')
-        logger.info(f"Taxonomy file content: {taxonomy_content}")  # 전체 내용 로깅
+        logger.info("=== Taxonomy File Content Start ===")
+        logger.info(taxonomy_content)
+        logger.info("=== Taxonomy File Content End ===")
+        
+        # 파일 내용을 직접 표시 (디버깅용)
+        st.text("업로드된 파일 내용:")
+        st.code(taxonomy_content, language="json")
         
         # JSON 파싱
         try:
             taxonomy_data = json.loads(taxonomy_content)
-            logger.info(f"Parsed taxonomy data: {taxonomy_data}")
+            logger.info("=== Parsed Taxonomy Data Start ===")
+            logger.info(json.dumps(taxonomy_data, indent=2, ensure_ascii=False))
+            logger.info("=== Parsed Taxonomy Data End ===")
         except json.JSONDecodeError as e:
             st.error(f"JSON 파싱 오류: {str(e)}")
             st.stop()
@@ -48,6 +56,7 @@ if taxonomy_file is not None:
             
         if "targets" not in taxonomy_data:
             st.error("Taxonomy 데이터에 'targets' 필드가 없습니다.")
+            st.error(f"현재 데이터 구조: {json.dumps(taxonomy_data, indent=2, ensure_ascii=False)}")
             st.stop()
             
         if not isinstance(taxonomy_data["targets"], list):
