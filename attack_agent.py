@@ -105,7 +105,9 @@ def generate_attack_prompt(state: AgentState) -> AgentState:
         ("human", f"Generate an attack prompt using:\nTaxonomy: {taxonomy}\nStrategy: {strategy}")
     ])
     
-    response = llm.invoke(prompt)
+    # Format the prompt into messages
+    messages = prompt.format_messages()
+    response = llm.invoke(messages)
     state["generated_prompt"] = response.content
     return state
 
@@ -119,7 +121,9 @@ def judge_prompt(state: AgentState) -> AgentState:
         ("human", f"Evaluate this prompt: {prompt}")
     ])
     
-    response = llm.invoke(judge_prompt)
+    # Format the prompt into messages
+    messages = judge_prompt.format_messages()
+    response = llm.invoke(messages)
     try:
         score = float(response.content)
         state["judge_score"] = score
