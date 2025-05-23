@@ -6,8 +6,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 import json
 import pandas as pd
-import graphviz
 import streamlit as st
+from streamlit_agraph import agraph, Node, Edge, Config
 
 # Load environment variables
 load_dotenv()
@@ -73,26 +73,32 @@ def should_retry(state: State) -> Tuple[State, str]:
     return state, "generate_attack_prompt"
 
 def create_workflow_image():
-    """Create and save workflow image."""
-    dot = graphviz.Digraph(comment='공격 프롬프트 생성 워크플로우')
-    dot.attr(rankdir='TB')
+    """Create and display workflow using streamlit-agraph."""
+    nodes = [
+        Node(id="start", label="시작", size=25, color="#00ff00"),
+        Node(id="generate", label="공격 프롬프트\n생성", size=25, color="#ff9900"),
+        Node(id="evaluate", label="평가", size=25, color="#ff9900"),
+        Node(id="success", label="성공", size=25, color="#00ff00"),
+        Node(id="retry", label="재시도", size=25, color="#ff0000")
+    ]
     
-    # Add nodes
-    dot.node('start', '시작', shape='oval')
-    dot.node('generate', '공격 프롬프트\n생성', shape='rectangle')
-    dot.node('evaluate', '평가', shape='rectangle')
-    dot.node('success', '성공', shape='oval')
-    dot.node('retry', '재시도', shape='diamond')
+    edges = [
+        Edge(source="start", target="generate", label=""),
+        Edge(source="generate", target="evaluate", label=""),
+        Edge(source="evaluate", target="retry", label=""),
+        Edge(source="retry", target="generate", label="실패"),
+        Edge(source="retry", target="success", label="성공")
+    ]
     
-    # Add edges
-    dot.edge('start', 'generate')
-    dot.edge('generate', 'evaluate')
-    dot.edge('evaluate', 'retry')
-    dot.edge('retry', 'generate', '실패')
-    dot.edge('retry', 'success', '성공')
+    config = Config(
+        width=800,
+        height=400,
+        directed=True,
+        physics=True,
+        hierarchical=False
+    )
     
-    # Save the diagram
-    dot.render('workflow', format='png', cleanup=True)
+    return agraph(nodes=nodes, edges=edges, config=config)
 
 # Create the workflow
 workflow = StateGraph(State)
@@ -127,9 +133,6 @@ def run_attack_workflow(target: str, strategy: Dict = None) -> Dict:
     return result
 
 if __name__ == "__main__":
-    # Create workflow image
-    create_workflow_image()
-    
     # Example usage
     taxonomy_seed = load_taxonomy_seed("data/taxonomy_seed.json")
     strategies = load_strategy("data/strategy.csv")

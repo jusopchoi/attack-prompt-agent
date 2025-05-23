@@ -14,7 +14,6 @@ st.title("공격 프롬프트 생성 시스템")
 # 워크플로우 이미지 표시
 st.header("에이전트 워크플로우")
 create_workflow_image()
-st.image("workflow.png", caption="공격 프롬프트 생성 워크플로우", use_column_width=True)
 
 # 사이드바 설정
 st.sidebar.header("설정")
