@@ -31,9 +31,15 @@ if taxonomy_file is not None:
     try:
         # 파일 내용 로깅
         taxonomy_content = taxonomy_file.getvalue().decode('utf-8')
-        logger.info(f"Taxonomy file content: {taxonomy_content[:200]}...")  # 처음 200자만 로깅
+        logger.info(f"Taxonomy file content: {taxonomy_content}")  # 전체 내용 로깅
         
-        taxonomy_data = json.loads(taxonomy_content)
+        # JSON 파싱
+        try:
+            taxonomy_data = json.loads(taxonomy_content)
+            logger.info(f"Parsed taxonomy data: {taxonomy_data}")
+        except json.JSONDecodeError as e:
+            st.error(f"JSON 파싱 오류: {str(e)}")
+            st.stop()
         
         # taxonomy 데이터 유효성 검사
         if not isinstance(taxonomy_data, dict):
@@ -110,10 +116,6 @@ if taxonomy_file is not None:
                         logger.error(error_msg)
                         st.error(error_msg)
                         continue
-    except json.JSONDecodeError as e:
-        error_msg = f"잘못된 JSON 파일입니다: {str(e)}"
-        logger.error(error_msg)
-        st.error(error_msg)
     except Exception as e:
         error_msg = f"오류가 발생했습니다: {str(e)}\n{traceback.format_exc()}"
         logger.error(error_msg)
