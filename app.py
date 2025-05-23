@@ -58,13 +58,16 @@ with st.sidebar:
     
     # Generate button
     if st.button("프롬프트 생성"):
-        with st.spinner("프롬프트 생성 중..."):
-            try:
-                result = generate_attack_prompts(selected_taxonomy, selected_strategy)
-                st.session_state["result"] = result
-            except Exception as e:
-                logger.error(f"프롬프트 생성 중 오류 발생: {str(e)}")
-                st.error("프롬프트 생성 중 오류가 발생했습니다.")
+        if not selected_taxonomy or not selected_strategy:
+            st.error("Taxonomy와 Strategy를 모두 선택해주세요.")
+        else:
+            with st.spinner("프롬프트 생성 중..."):
+                try:
+                    result = generate_attack_prompts(selected_taxonomy, selected_strategy)
+                    st.session_state["result"] = result
+                except Exception as e:
+                    logger.error(f"프롬프트 생성 중 오류 발생: {str(e)}")
+                    st.error(f"프롬프트 생성 중 오류가 발생했습니다: {str(e)}")
 
 # Main content
 if "result" in st.session_state:
@@ -95,19 +98,22 @@ st.header("커스텀 Taxonomy 입력")
 custom_taxonomy = st.text_area("새로운 Taxonomy 입력 (JSON 형식)", height=200)
 
 if st.button("커스텀 Taxonomy로 생성"):
-    try:
-        custom_data = json.loads(custom_taxonomy)
-        with st.spinner("커스텀 Taxonomy로 프롬프트 생성 중..."):
-            result = generate_attack_prompts(
-                json.dumps(custom_data, ensure_ascii=False),
-                selected_strategy
-            )
-            st.session_state["result"] = result
-    except json.JSONDecodeError:
-        st.error("올바른 JSON 형식으로 입력해주세요.")
-    except Exception as e:
-        logger.error(f"커스텀 Taxonomy 처리 중 오류 발생: {str(e)}")
-        st.error("커스텀 Taxonomy 처리 중 오류가 발생했습니다.")
+    if not custom_taxonomy or not selected_strategy:
+        st.error("커스텀 Taxonomy와 Strategy를 모두 입력해주세요.")
+    else:
+        try:
+            custom_data = json.loads(custom_taxonomy)
+            with st.spinner("커스텀 Taxonomy로 프롬프트 생성 중..."):
+                result = generate_attack_prompts(
+                    json.dumps(custom_data, ensure_ascii=False),
+                    selected_strategy
+                )
+                st.session_state["result"] = result
+        except json.JSONDecodeError:
+            st.error("올바른 JSON 형식으로 입력해주세요.")
+        except Exception as e:
+            logger.error(f"커스텀 Taxonomy 처리 중 오류 발생: {str(e)}")
+            st.error(f"커스텀 Taxonomy 처리 중 오류가 발생했습니다: {str(e)}")
 
 # 워크플로우 이미지 표시
 st.header("에이전트 워크플로우")

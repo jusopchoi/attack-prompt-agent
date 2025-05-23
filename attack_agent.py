@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_agraph import agraph, Node, Edge, Config
 import logging
+import traceback
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -161,25 +162,41 @@ def create_attack_graph() -> Graph:
 # Main execution function
 def generate_attack_prompts(taxonomy: str, strategy: str) -> Dict[str, Any]:
     """Generate attack prompts for a given taxonomy and strategy."""
-    # Initialize state
-    initial_state = {
-        "messages": [],
-        "current_taxonomy": taxonomy,
-        "current_strategy": strategy,
-        "generated_prompt": "",
-        "judge_score": 0.0,
-        "is_success": False
-    }
-    
-    # Create and run the graph
-    graph = create_attack_graph()
-    final_state = graph.invoke(initial_state)
-    
-    return {
-        "prompt": final_state["generated_prompt"],
-        "score": final_state["judge_score"],
-        "success": final_state["is_success"]
-    }
+    try:
+        logger.info(f"프롬프트 생성 시작 - Taxonomy: {taxonomy}, Strategy: {strategy}")
+        
+        # 입력값 검증
+        if not taxonomy or not strategy:
+            error_msg = "Taxonomy와 Strategy는 비어있을 수 없습니다."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # Initialize state
+        initial_state = {
+            "messages": [],
+            "current_taxonomy": taxonomy,
+            "current_strategy": strategy,
+            "generated_prompt": "",
+            "judge_score": 0.0,
+            "is_success": False
+        }
+        
+        # Create and run the graph
+        graph = create_attack_graph()
+        logger.info("워크플로우 그래프 생성 완료")
+        
+        final_state = graph.invoke(initial_state)
+        logger.info(f"프롬프트 생성 완료 - Score: {final_state['judge_score']}, Success: {final_state['is_success']}")
+        
+        return {
+            "prompt": final_state["generated_prompt"],
+            "score": final_state["judge_score"],
+            "success": final_state["is_success"]
+        }
+    except Exception as e:
+        error_msg = f"프롬프트 생성 중 오류 발생: {str(e)}"
+        logger.error(f"{error_msg}\n{traceback.format_exc()}")
+        raise RuntimeError(error_msg)
 
 def create_workflow_image():
     """Create and display workflow using streamlit-agraph."""
