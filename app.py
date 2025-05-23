@@ -130,25 +130,64 @@ if taxonomy_file is not None:
         taxonomy_content = taxonomy_file.getvalue().decode('utf-8')
         logger.info("Taxonomy 파일 내용 로드됨")
         
-        uploaded_taxonomy = json.loads(taxonomy_content)
-        logger.info("Taxonomy JSON 파싱 성공")
-        
-        # taxonomy 데이터 유효성 검사
-        if not isinstance(uploaded_taxonomy, dict):
-            logger.error("Taxonomy 데이터가 딕셔너리 형식이 아님")
-            st.error("Taxonomy 데이터는 JSON 객체여야 합니다.")
+        try:
+            uploaded_taxonomy = json.loads(taxonomy_content)
+            logger.info("Taxonomy JSON 파싱 성공")
+            
+            # taxonomy 데이터 유효성 검사
+            if not isinstance(uploaded_taxonomy, dict):
+                error_msg = "Taxonomy 데이터는 JSON 객체여야 합니다."
+                logger.error(error_msg)
+                st.error(error_msg)
+                st.stop()
+            
+            # 필수 필드 검사
+            for key, value in uploaded_taxonomy.items():
+                if not isinstance(value, dict):
+                    error_msg = f"'{key}' 항목이 올바른 형식이 아닙니다. 객체여야 합니다."
+                    logger.error(error_msg)
+                    st.error(error_msg)
+                    st.stop()
+                
+                required_fields = ['description', 'examples', 'impact', 'target']
+                missing_fields = [field for field in required_fields if field not in value]
+                if missing_fields:
+                    error_msg = f"'{key}' 항목에 필수 필드가 누락되었습니다: {', '.join(missing_fields)}"
+                    logger.error(error_msg)
+                    st.error(error_msg)
+                    st.stop()
+            
+            # 업로드된 taxonomy를 기존 데이터에 추가
+            taxonomy_data.update(uploaded_taxonomy)
+            logger.info(f"Taxonomy 데이터 업데이트 완료: {len(uploaded_taxonomy)} 항목 추가")
+            st.success("Taxonomy 데이터가 성공적으로 업로드되었습니다.")
+            
+        except json.JSONDecodeError as e:
+            error_msg = f"JSON 파싱 오류: {str(e)}"
+            logger.error(error_msg)
+            st.error("JSON 파일 형식이 올바르지 않습니다.")
             st.stop()
-        
-        # 업로드된 taxonomy를 기존 데이터에 추가
-        taxonomy_data.update(uploaded_taxonomy)
-        logger.info(f"Taxonomy 데이터 업데이트 완료: {len(uploaded_taxonomy)} 항목 추가")
-        st.success("Taxonomy 데이터가 성공적으로 업로드되었습니다.")
         
         # 전략 파일 처리
         if strategy_file is not None:
             try:
                 uploaded_strategy = load_strategy(strategy_file)
                 logger.info(f"전략 파일 로드 성공: {len(uploaded_strategy)} 행")
+                
+                if uploaded_strategy.empty:
+                    error_msg = "전략 파일이 비어있습니다."
+                    logger.error(error_msg)
+                    st.error(error_msg)
+                    st.stop()
+                
+                # 필수 열 검사
+                required_columns = ['strategy']
+                missing_columns = [col for col in required_columns if col not in uploaded_strategy.columns]
+                if missing_columns:
+                    error_msg = f"전략 파일에 필수 열이 누락되었습니다: {', '.join(missing_columns)}"
+                    logger.error(error_msg)
+                    st.error(error_msg)
+                    st.stop()
                 
                 if not strategy_data.empty:
                     strategy_data = pd.concat([strategy_data, uploaded_strategy], ignore_index=True)
@@ -157,16 +196,18 @@ if taxonomy_file is not None:
                     
                 logger.info(f"전략 데이터 업데이트 완료: 총 {len(strategy_data)} 행")
                 st.success(f"전략 {len(uploaded_strategy)}개가 추가되었습니다.")
+                
             except Exception as e:
-                logger.error(f"전략 파일 처리 중 오류 발생: {str(e)}")
+                error_msg = f"전략 파일 처리 중 오류 발생: {str(e)}"
+                logger.error(f"{error_msg}\n{traceback.format_exc()}")
                 st.error("전략 파일 로드 중 오류가 발생했습니다.")
+                st.stop()
         
         # 페이지 새로고침
         st.experimental_rerun()
         
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON 파싱 오류: {str(e)}")
-        st.error("JSON 파일 형식이 올바르지 않습니다.")
     except Exception as e:
-        logger.error(f"파일 처리 중 오류 발생: {str(e)}\n{traceback.format_exc()}")
-        st.error("파일 처리 중 오류가 발생했습니다. 로그를 확인해주세요.") 
+        error_msg = f"파일 처리 중 오류 발생: {str(e)}"
+        logger.error(f"{error_msg}\n{traceback.format_exc()}")
+        st.error("파일 처리 중 오류가 발생했습니다. 로그를 확인해주세요.")
+        st.stop() 

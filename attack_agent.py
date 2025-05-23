@@ -105,9 +105,16 @@ def generate_attack_prompt(state: AgentState) -> AgentState:
     # Taxonomy 데이터 구조화
     taxonomy_info = ""
     if isinstance(taxonomy, dict):
+        # examples 필드 처리
+        examples = taxonomy.get('examples', [])
+        if isinstance(examples, list):
+            examples_str = ', '.join(examples)
+        else:
+            examples_str = str(examples)
+        
         taxonomy_info = f"""
 Description: {taxonomy.get('description', '')}
-Examples: {', '.join(taxonomy.get('examples', []))}
+Examples: {examples_str}
 Impact: {taxonomy.get('impact', '')}
 Target: {taxonomy.get('target', '')}
 """
