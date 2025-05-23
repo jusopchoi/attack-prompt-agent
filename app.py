@@ -39,13 +39,17 @@ if taxonomy_file is not None:
                     # 전략이 있는 경우 선택 가능하게
                     selected_strategy = None
                     if strategies:
-                        strategy_names = [f"{s.get('name', '')} - {s.get('description', '')}" for s in strategies]
-                        selected_strategy_name = st.selectbox(
+                        # 전략 목록을 문자열로 변환하여 표시
+                        strategy_options = [f"{i+1}. {s.get('name', '')} - {s.get('description', '')}" 
+                                         for i, s in enumerate(strategies)]
+                        selected_option = st.selectbox(
                             "공격 전략 선택",
-                            strategy_names,
+                            strategy_options,
                             key=f"strategy_{target}"
                         )
-                        selected_strategy = strategies[strategy_names.index(selected_strategy_name)]
+                        # 선택된 전략의 인덱스 찾기
+                        selected_index = strategy_options.index(selected_option)
+                        selected_strategy = strategies[selected_index]
                     
                     result = run_attack_workflow(target, selected_strategy)
                     
