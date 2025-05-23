@@ -36,9 +36,10 @@ with st.sidebar:
     st.header("입력 설정")
     
     # Taxonomy selection
+    taxonomy_options = list(taxonomy_data.keys())
     selected_taxonomy = st.selectbox(
         "Taxonomy 선택",
-        options=list(taxonomy_data.keys())
+        options=taxonomy_options
     )
     
     # Strategy selection
@@ -97,89 +98,42 @@ if st.button("커스텀 Taxonomy로 생성"):
 st.header("에이전트 워크플로우")
 create_workflow_image()
 
-# 사이드바 설정
-st.sidebar.header("설정")
-taxonomy_file = st.sidebar.file_uploader("Taxonomy Seed JSON 파일 업로드", type=['json'])
-strategy_file = st.sidebar.file_uploader("Strategy CSV 파일 업로드", type=['csv'])
+# 파일 업로드 섹션
+st.header("파일 업로드")
+taxonomy_file = st.file_uploader("Taxonomy Seed JSON 파일 업로드", type=['json'])
+strategy_file = st.file_uploader("Strategy CSV 파일 업로드", type=['csv'])
 
-# 메인 콘텐츠 영역
 if taxonomy_file is not None:
     try:
         # JSON 파싱
-        try:
-            taxonomy_content = taxonomy_file.getvalue().decode('utf-8')
-            taxonomy_data = json.loads(taxonomy_content)
-        except json.JSONDecodeError as e:
-            st.error("JSON 파일 형식이 올바르지 않습니다.")
-            st.stop()
+        taxonomy_content = taxonomy_file.getvalue().decode('utf-8')
+        uploaded_taxonomy = json.loads(taxonomy_content)
         
         # taxonomy 데이터 유효성 검사
-        if not isinstance(taxonomy_data, dict):
+        if not isinstance(uploaded_taxonomy, dict):
             st.error("Taxonomy 데이터는 JSON 객체여야 합니다.")
             st.stop()
-            
-        if "targets" not in taxonomy_data:
-            st.error("Taxonomy 데이터에 'targets' 필드가 없습니다.")
-            st.stop()
-            
-        if not isinstance(taxonomy_data["targets"], list):
-            st.error("'targets' 필드는 배열이어야 합니다.")
-            st.stop()
-            
-        if not taxonomy_data["targets"]:
-            st.error("'targets' 배열이 비어있습니다.")
-            st.stop()
-            
-        # 유효한 데이터인 경우에만 표시
-        st.json(taxonomy_data)
         
-        strategies = []
+        # 업로드된 taxonomy를 기존 데이터에 추가
+        taxonomy_data.update(uploaded_taxonomy)
+        st.success("Taxonomy 데이터가 성공적으로 업로드되었습니다.")
+        
+        # 전략 파일 처리
         if strategy_file is not None:
             try:
-                strategies = load_strategy(strategy_file)
-                st.sidebar.write(f"전략 {len(strategies)}개 로드됨")
+                uploaded_strategy = pd.read_csv(strategy_file)
+                strategy_data = pd.concat([strategy_data, uploaded_strategy], ignore_index=True)
+                st.success(f"전략 {len(uploaded_strategy)}개가 추가되었습니다.")
             except Exception as e:
                 st.error("전략 파일 로드 중 오류가 발생했습니다.")
         
-        if st.button("공격 프롬프트 생성"):
-            with st.spinner("공격 프롬프트 생성 중..."):
-                targets = taxonomy_data["targets"]
-                
-                for target in targets:
-                    try:
-                        st.subheader(f"목표: {target}")
-                        
-                        # 전략이 있는 경우 선택 가능하게
-                        selected_strategy = None
-                        if strategies:
-                            strategy_options = [f"{i+1}. {s.get('name', '')} - {s.get('description', '')}" 
-                                             for i, s in enumerate(strategies)]
-                            selected_option = st.selectbox(
-                                "공격 전략 선택",
-                                strategy_options,
-                                key=f"strategy_{target}"
-                            )
-                            selected_index = strategy_options.index(selected_option)
-                            selected_strategy = strategies[selected_index]
-                        
-                        result = generate_attack_prompts(target, selected_strategy)
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write("생성된 공격 프롬프트:")
-                            st.write(result["prompt"])
-                        with col2:
-                            st.write("평가 결과:")
-                            st.write(result["score"])
-                        
-                        st.divider()
-                    except Exception as e:
-                        st.error(f"목표 '{target}' 처리 중 오류가 발생했습니다.")
-                        continue
+        # 페이지 새로고침
+        st.experimental_rerun()
+        
+    except json.JSONDecodeError:
+        st.error("JSON 파일 형식이 올바르지 않습니다.")
     except Exception as e:
         st.error("파일 처리 중 오류가 발생했습니다.")
-else:
-    st.info("시작하려면 taxonomy seed JSON 파일을 업로드해주세요.")
 
 # 사이드바에 택소노미와 전략 선택 옵션 추가
 st.sidebar.title("설정")
