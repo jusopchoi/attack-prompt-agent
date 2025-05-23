@@ -141,7 +141,7 @@ if taxonomy_file is not None:
         # 전략 파일 처리
         if strategy_file is not None:
             try:
-                uploaded_strategy = pd.read_csv(strategy_file)
+                uploaded_strategy = load_strategy(strategy_file)
                 logger.info(f"전략 파일 로드 성공: {len(uploaded_strategy)} 행")
                 
                 if not strategy_data.empty:

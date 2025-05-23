@@ -57,11 +57,39 @@ class AgentState(TypedDict):
 
 # Load taxonomy and strategy data
 def load_taxonomy():
-    with open("data/taxonomy_seed.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open("data/taxonomy_seed.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.warning("taxonomy_seed.json 파일을 찾을 수 없습니다. 빈 딕셔너리를 반환합니다.")
+        return {}
+    except json.JSONDecodeError as e:
+        logger.error(f"taxonomy_seed.json 파일 파싱 중 오류 발생: {str(e)}")
+        return {}
+    except Exception as e:
+        logger.error(f"taxonomy_seed.json 파일 로드 중 오류 발생: {str(e)}")
+        return {}
 
-def load_strategy():
-    return pd.read_csv("data/strategy.csv")
+def load_strategy(file_path=None):
+    try:
+        if file_path is None:
+            file_path = "data/strategy.csv"
+        
+        if isinstance(file_path, str):
+            # 파일 경로가 문자열인 경우 (로컬 파일)
+            if not os.path.exists(file_path):
+                logger.warning(f"{file_path} 파일을 찾을 수 없습니다. 빈 DataFrame을 반환합니다.")
+                return pd.DataFrame()
+            return pd.read_csv(file_path)
+        else:
+            # 파일 객체인 경우 (업로드된 파일)
+            return pd.read_csv(file_path)
+    except pd.errors.EmptyDataError:
+        logger.warning("CSV 파일이 비어있습니다.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"전략 파일 로드 중 오류 발생: {str(e)}")
+        return pd.DataFrame()
 
 # Define node functions
 def generate_attack_prompt(state: AgentState) -> AgentState:
