@@ -68,8 +68,18 @@ def evaluate_with_universal_judge(state: State) -> State:
 
 def should_retry(state: State) -> str:
     """Determine if we should retry generating the attack prompt."""
-    if "성공" in state['judge_evaluation'] or "success" in state['judge_evaluation'].lower():
+    # 최대 시도 횟수 확인
+    attempts = state.get('attempts', 0)
+    if attempts >= 3:  # 최대 3번까지만 시도
         return END
+    
+    # 성공 조건 확인
+    evaluation = state['judge_evaluation'].lower()
+    if "성공" in evaluation or "success" in evaluation:
+        return END
+    
+    # 시도 횟수 증가
+    state['attempts'] = attempts + 1
     return "generate_attack_prompt"
 
 def create_workflow_image():
@@ -121,14 +131,15 @@ workflow.add_conditional_edges(
 # Set the entry point
 workflow.set_entry_point("generate_attack_prompt")
 
-# Compile the workflow
-app = workflow.compile()
+# Compile the workflow with recursion limit
+app = workflow.compile(recursion_limit=5)  # 재귀 제한을 5로 설정
 
 def run_attack_workflow(target: str, strategy: Dict = None) -> Dict:
     """Run the attack workflow for a given target."""
     initial_state = {
         "target": target,
-        "strategy": strategy if strategy else {}
+        "strategy": strategy if strategy else {},
+        "attempts": 0  # 시도 횟수 초기화
     }
     result = app.invoke(initial_state)
     return result
