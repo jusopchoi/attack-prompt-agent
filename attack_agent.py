@@ -55,6 +55,7 @@ class AgentState(TypedDict):
     generated_prompt: str
     judge_score: float
     is_success: bool
+    retry_count: int  # 재시도 횟수를 추적하기 위한 필드 추가
 
 # Load taxonomy and strategy data
 def load_taxonomy():
@@ -97,6 +98,9 @@ def generate_attack_prompt(state: AgentState) -> AgentState:
     """Generate attack prompt based on taxonomy and strategy."""
     taxonomy = state["current_taxonomy"]
     strategy = state["current_strategy"]
+    
+    # 재시도 횟수 증가
+    state["retry_count"] = state.get("retry_count", 0) + 1
     
     # Taxonomy 데이터 구조화
     taxonomy_info = ""
@@ -148,7 +152,18 @@ def judge_prompt(state: AgentState) -> AgentState:
 
 def should_retry(state: AgentState) -> str:
     """Determine if we should retry generating the prompt."""
-    return "retry" if not state["is_success"] else END
+    # 최대 재시도 횟수 제한
+    if state["retry_count"] >= 3:
+        logger.info("최대 재시도 횟수에 도달했습니다.")
+        return END
+    
+    # 성공 조건 완화 (0.6 이상이면 성공으로 간주)
+    if state["judge_score"] >= 0.6:
+        logger.info(f"성공 조건 충족: 점수 {state['judge_score']}")
+        return END
+    
+    logger.info(f"재시도 필요: 현재 점수 {state['judge_score']}, 재시도 횟수 {state['retry_count']}")
+    return "retry"
 
 # Create the graph
 def create_attack_graph() -> Graph:
@@ -207,7 +222,8 @@ def generate_attack_prompts(taxonomy: str, strategy: str) -> Dict[str, Any]:
             "current_strategy": strategy,
             "generated_prompt": "",
             "judge_score": 0.0,
-            "is_success": False
+            "is_success": False,
+            "retry_count": 0  # 초기 재시도 횟수 설정
         }
         
         # Create and run the graph
@@ -215,12 +231,13 @@ def generate_attack_prompts(taxonomy: str, strategy: str) -> Dict[str, Any]:
         logger.info("워크플로우 그래프 생성 완료")
         
         final_state = graph.invoke(initial_state)
-        logger.info(f"프롬프트 생성 완료 - Score: {final_state['judge_score']}, Success: {final_state['is_success']}")
+        logger.info(f"프롬프트 생성 완료 - Score: {final_state['judge_score']}, Success: {final_state['is_success']}, Retries: {final_state['retry_count']}")
         
         return {
             "prompt": final_state["generated_prompt"],
             "score": final_state["judge_score"],
-            "success": final_state["is_success"]
+            "success": final_state["is_success"],
+            "retries": final_state["retry_count"]
         }
     except Exception as e:
         error_msg = f"프롬프트 생성 중 오류 발생: {str(e)}"
@@ -267,4 +284,5 @@ if __name__ == "__main__":
     result = generate_attack_prompts(first_taxonomy, first_strategy)
     print(f"Generated Prompt: {result['prompt']}")
     print(f"Judge Score: {result['score']}")
-    print(f"Success: {result['success']}") 
+    print(f"Success: {result['success']}")
+    print(f"Retries: {result['retries']}") 
