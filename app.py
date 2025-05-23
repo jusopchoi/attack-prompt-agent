@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
-from attack_agent import generate_attack_prompts, load_taxonomy, load_strategy
+from attack_agent import generate_attack_prompts, load_taxonomy, load_strategy, create_workflow_image
 import os
 from dotenv import load_dotenv
 import traceback
@@ -42,9 +42,10 @@ with st.sidebar:
     )
     
     # Strategy selection
+    strategy_options = strategy_data.iloc[:, 0].tolist()  # 첫 번째 컬럼을 전략으로 사용
     selected_strategy = st.selectbox(
         "전략 선택",
-        options=strategy_data["strategy"].tolist()
+        options=strategy_options
     )
     
     # Generate button
@@ -178,4 +179,21 @@ if taxonomy_file is not None:
     except Exception as e:
         st.error("파일 처리 중 오류가 발생했습니다.")
 else:
-    st.info("시작하려면 taxonomy seed JSON 파일을 업로드해주세요.") 
+    st.info("시작하려면 taxonomy seed JSON 파일을 업로드해주세요.")
+
+# 사이드바에 택소노미와 전략 선택 옵션 추가
+st.sidebar.title("설정")
+
+# 택소노미 선택
+taxonomy_options = list(taxonomy_data.keys())
+selected_taxonomy = st.sidebar.selectbox(
+    "택소노미 선택",
+    options=taxonomy_options
+)
+
+# 전략 선택
+strategy_options = strategy_data.iloc[:, 0].tolist()  # 첫 번째 컬럼을 전략으로 사용
+selected_strategy = st.sidebar.selectbox(
+    "전략 선택",
+    options=strategy_options
+) 
