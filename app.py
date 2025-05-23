@@ -39,14 +39,16 @@ with st.sidebar:
     taxonomy_options = list(taxonomy_data.keys())
     selected_taxonomy = st.selectbox(
         "Taxonomy 선택",
-        options=taxonomy_options
+        options=taxonomy_options,
+        key="taxonomy_select"
     )
     
     # Strategy selection
     strategy_options = strategy_data.iloc[:, 0].tolist()  # 첫 번째 컬럼을 전략으로 사용
     selected_strategy = st.selectbox(
         "전략 선택",
-        options=strategy_options
+        options=strategy_options,
+        key="strategy_select"
     )
     
     # Generate button
@@ -133,21 +135,4 @@ if taxonomy_file is not None:
     except json.JSONDecodeError:
         st.error("JSON 파일 형식이 올바르지 않습니다.")
     except Exception as e:
-        st.error("파일 처리 중 오류가 발생했습니다.")
-
-# 사이드바에 택소노미와 전략 선택 옵션 추가
-st.sidebar.title("설정")
-
-# 택소노미 선택
-taxonomy_options = list(taxonomy_data.keys())
-selected_taxonomy = st.sidebar.selectbox(
-    "택소노미 선택",
-    options=taxonomy_options
-)
-
-# 전략 선택
-strategy_options = strategy_data.iloc[:, 0].tolist()  # 첫 번째 컬럼을 전략으로 사용
-selected_strategy = st.sidebar.selectbox(
-    "전략 선택",
-    options=strategy_options
-) 
+        st.error("파일 처리 중 오류가 발생했습니다.") 
