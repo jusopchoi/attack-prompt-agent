@@ -175,6 +175,17 @@ def generate_attack_prompts(taxonomy: str, strategy: str) -> Dict[str, Any]:
             logger.error(error_msg)
             raise ValueError(error_msg)
         
+        # Taxonomy가 문자열인 경우 JSON으로 파싱
+        if isinstance(taxonomy, str):
+            try:
+                taxonomy_data = json.loads(taxonomy)
+                # 첫 번째 키를 사용
+                taxonomy_key = next(iter(taxonomy_data))
+                taxonomy = taxonomy_data[taxonomy_key]
+            except json.JSONDecodeError:
+                # JSON 파싱 실패 시 원본 문자열 사용
+                pass
+        
         # Initialize state
         initial_state = {
             "messages": [],
