@@ -7,15 +7,26 @@ from langgraph.graph import StateGraph, END
 import json
 import pandas as pd
 import graphviz
+import streamlit as st
 
 # Load environment variables
 load_dotenv()
 
 # Initialize the LLM
+try:
+    # Streamlit secrets에서 API 키 가져오기
+    api_key = st.secrets["openai"]["api_key"]
+except:
+    # 로컬 환경에서 .env 파일에서 API 키 가져오기
+    api_key = os.getenv("OPENAI_API_KEY")
+
+if not api_key:
+    raise ValueError("OpenAI API 키가 설정되지 않았습니다. Streamlit secrets나 .env 파일에 API 키를 설정해주세요.")
+
 llm = ChatOpenAI(
     model="gpt-4-0125-preview",
     temperature=0.7,
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=api_key
 )
 
 # Define the state type
